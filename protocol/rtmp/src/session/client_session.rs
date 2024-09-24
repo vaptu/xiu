@@ -80,6 +80,8 @@ pub struct ClientSession {
     stream_name: String,
     state: ClientSessionState,
     client_type: ClientSessionType,
+    pub_app_name: String,
+    pub_stream_name: String,
     sub_app_name: Option<String>,
     sub_stream_name: Option<String>,
     /*configure how many gops will be cached.*/
@@ -122,6 +124,8 @@ impl ClientSession {
             handshaker: SimpleHandshakeClient::new(Arc::clone(&net_io)),
             unpacketizer: ChunkUnpacketizer::new(),
             raw_domain_name,
+            pub_app_name: app_name.clone(),
+            pub_stream_name: stream_name.clone(),
             app_name,
             raw_stream_name,
             stream_name,
@@ -132,9 +136,14 @@ impl ClientSession {
             gop_num,
         }
     }
-    
-    pub fn set_timeout(&mut self, timeout: Duration){
+
+    pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = Some(timeout)
+    }
+
+    pub fn set_publish(&mut self, app_name: String, stream_name: String) {
+        self.pub_app_name = app_name;
+        self.pub_stream_name = stream_name;
     }
 
     pub async fn run(&mut self) -> Result<(), SessionError> {
@@ -544,8 +553,8 @@ impl ClientSession {
                     //pull from remote rtmp server and publish to local session
                     self.common
                         .publish_to_stream_hub(
-                            self.app_name.clone(),
-                            self.stream_name.clone(),
+                            self.pub_app_name.clone(),
+                            self.pub_stream_name.clone(),
                             self.gop_num,
                         )
                         .await?
